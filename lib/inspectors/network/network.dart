@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:ui';
-
+import 'package:anyinspect_app/pages/json_view.dart';
 import 'package:anyinspect_client/anyinspect_client.dart';
 import 'package:anyinspect_ui/anyinspect_ui.dart';
 import 'package:flutter/material.dart' hide DataTable;
+import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 
@@ -268,6 +270,14 @@ class _NetworkInspectorState extends State<NetworkInspector>
     NetworkRecordRequest request = _selectedRecord!.request!;
     NetworkRecordResponse? response = _selectedRecord!.response;
 
+
+    ///从uri中获取参数
+
+    final uriContent = Uri.decodeComponent(request.uri);
+    final uri = Uri.dataFromString(uriContent);
+    final queryMap = uri.queryParameters;
+    final queryMapString = jsonEncode(queryMap);
+
     return DataViewer(
       children: [
         DataViewerSection(
@@ -275,7 +285,9 @@ class _NetworkInspectorState extends State<NetworkInspector>
           children: [
             DataViewerItem(
               title: const Text('Request URL'),
-              detailText: SelectableText(request.uri),
+              detailText: SelectableText(Uri.decodeComponent(request.uri),onTap: (){
+                _copy(Uri.decodeComponent(request.uri));
+              },),
             ),
             DataViewerItem(
               title: const Text('Request Method'),
@@ -294,20 +306,41 @@ class _NetworkInspectorState extends State<NetworkInspector>
             for (var key in (request.headers.keys))
               DataViewerItem(
                 title: SelectableText(key),
-                detailText: SelectableText('${request.headers[key]}'),
+                detailText: SelectableText('${request.headers[key]}',onTap: (){
+                  _copy(request.headers[key]);
+                },),
               ),
           ],
         ),
         DataViewerSection(
-          title: const Text('Request Body'),
+          title: _jsonTitle(queryMapString, 'Request Body'),
           children: [
-            if (request.body != null)
+            if (request.body != null && request.body.toString().isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(14),
                 child: SelectableText(
                   request.body,
+                  onTap: (){
+                    _copy(request.body);
+                  },
                 ),
               ),
+            if(queryMap.isNotEmpty)
+
+              Padding(
+                padding: const EdgeInsets.all(14.0),
+                child: JsonViewWidget(jsonString: queryMapString,),
+              )
+
+              // Padding(
+              //   padding: const EdgeInsets.all(14.0),
+              //   child: SelectableText(
+              //     queryMapString,
+              //     onTap: (){
+              //       _copy(queryMapString);
+              //     },
+              //   ),
+              // )
           ],
         ),
         if (response != null)
@@ -317,23 +350,63 @@ class _NetworkInspectorState extends State<NetworkInspector>
               for (var key in (response.headers.keys))
                 DataViewerItem(
                   title: SelectableText(key),
-                  detailText: SelectableText('${response.headers[key]}'),
+                  detailText: SelectableText('${response.headers[key]}',onTap: (){
+                    _copy(response.headers[key]);
+                  },),
                 ),
             ],
           ),
         if (response != null)
           DataViewerSection(
-            title: const Text('Response Body'),
+            title: _jsonTitle(response.body, 'Response Body'),
             children: [
               if (response.body != null)
                 Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: SelectableText(
-                    response.body,
-                  ),
-                ),
+                  padding: const EdgeInsets.all(14.0),
+                  child: JsonViewWidget(jsonString: response.body,),
+                )
+                // Padding(
+                //   padding: const EdgeInsets.all(14),
+                //   child: SelectableText(
+                //     response.body,
+                //     onTap: (){
+                //       _copy(response.body);
+                //     },
+                //   ),
+                // ),
+
             ],
           ),
+      ],
+    );
+  }
+
+  void _copy(String text){
+    Clipboard.setData(ClipboardData(text: text));
+    showMessage('复制成功');
+  }
+
+  void showMessage(String text){
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  Widget _jsonTitle(String json,String title,){
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children:  [
+         Text(title),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            IconButton(onPressed: (){
+              _copy(json);
+            }, icon: const Icon(Icons.copy,size: 14,color: Colors.blue,)),
+            IconButton(onPressed: (){
+              pushToJsonView(context, json);
+            }, icon: const Icon(Icons.code_rounded,size: 14,color: Colors.blue))
+          ],
+        )
       ],
     );
   }
