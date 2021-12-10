@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:anyinspect_app/pages/json_view.dart';
 import 'package:anyinspect_client/anyinspect_client.dart';
 import 'package:anyinspect_ui/anyinspect_ui.dart';
-import 'package:flutter/material.dart' hide DataTable;
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
@@ -56,11 +55,11 @@ class _NetworkInspectorState extends State<NetworkInspector>
   }
 
   // 判断是不是需要被忽略的uri
-  bool _isIgSuffix(String uri){
+  bool _isIgSuffix(String uri) {
     var _r = false;
     for (var element in _igList) {
-    final _index=   uri.lastIndexOf(element);
-      if(_index>=0){
+      final _index = uri.lastIndexOf(element);
+      if (_index >= 0) {
         _r = true;
         continue;
       }
@@ -83,8 +82,8 @@ class _NetworkInspectorState extends State<NetworkInspector>
       request: request,
     );
     final uri = record.request?.uri;
-    final _isIgUri = _isIgSuffix(uri??'');
-    if(!_isIgUri){
+    final _isIgUri = _isIgSuffix(uri ?? '');
+    if (!_isIgUri) {
       _records.add(record);
       setState(() {});
     }
@@ -161,7 +160,8 @@ class _NetworkInspectorState extends State<NetworkInspector>
                   break;
               }
 
-              var showUri = request.uri.replaceAll('https://${request.headers['host']??''}', '');
+              var showUri = request.uri
+                  .replaceAll('https://${request.headers['host'] ?? ''}', '');
               return Row(
                 children: [
                   Container(
@@ -206,9 +206,10 @@ class _NetworkInspectorState extends State<NetworkInspector>
                   style: defaultTextStyle,
                 );
               }
-              return const Text('fetching...',style: TextStyle(
-                color: Colors.teal
-              ),);
+              return const Text(
+                'fetching...',
+                style: TextStyle(color: Colors.teal),
+              );
             },
           ),
         ),
@@ -222,8 +223,7 @@ class _NetworkInspectorState extends State<NetworkInspector>
                 return Text(
                   '${duration.inMilliseconds} ms',
                   style: defaultTextStyle.copyWith(
-                    color: _getMillisecondsColors(duration.inMilliseconds)
-                  ),
+                      color: _getMillisecondsColors(duration.inMilliseconds)),
                 );
               }
               return Container();
@@ -256,11 +256,11 @@ class _NetworkInspectorState extends State<NetworkInspector>
   }
 
   // 根据请求耗时显示对应的颜色
-  Color _getMillisecondsColors(int milliseconds){
+  Color _getMillisecondsColors(int milliseconds) {
     Color color = Colors.green;
-    if(milliseconds >= 2000 && milliseconds<10000){
+    if (milliseconds >= 2000 && milliseconds < 10000) {
       color = Colors.orange;
-    }else if(milliseconds>=10000){
+    } else if (milliseconds >= 10000) {
       color = Colors.red;
     }
     return color;
@@ -269,7 +269,6 @@ class _NetworkInspectorState extends State<NetworkInspector>
   Widget _buildSelectedRecordViewer(BuildContext context) {
     NetworkRecordRequest request = _selectedRecord!.request!;
     NetworkRecordResponse? response = _selectedRecord!.response;
-
 
     ///从uri中获取参数
 
@@ -285,9 +284,12 @@ class _NetworkInspectorState extends State<NetworkInspector>
           children: [
             DataViewerItem(
               title: const Text('Request URL'),
-              detailText: SelectableText(Uri.decodeComponent(request.uri),onTap: (){
-                _copy(Uri.decodeComponent(request.uri));
-              },),
+              detailText: SelectableText(
+                Uri.decodeComponent(request.uri),
+                onTap: () {
+                  _copy(Uri.decodeComponent(request.uri));
+                },
+              ),
             ),
             DataViewerItem(
               title: const Text('Request Method'),
@@ -296,7 +298,10 @@ class _NetworkInspectorState extends State<NetworkInspector>
             if (response != null)
               DataViewerItem(
                 title: const Text('Status Code'),
-                detailText: SelectableText('${response.statusCode}'),
+                detailText: SelectableText('${response.statusCode}',style: TextStyle(
+                  color: response.statusCode!=200? Colors.red:Colors.green,
+                  fontWeight: FontWeight.bold
+                ),),
               ),
           ],
         ),
@@ -306,9 +311,12 @@ class _NetworkInspectorState extends State<NetworkInspector>
             for (var key in (request.headers.keys))
               DataViewerItem(
                 title: SelectableText(key),
-                detailText: SelectableText('${request.headers[key]}',onTap: (){
-                  _copy(request.headers[key]);
-                },),
+                detailText: SelectableText(
+                  '${request.headers[key]}',
+                  onTap: () {
+                    _copy(request.headers[key]);
+                  },
+                ),
               ),
           ],
         ),
@@ -316,31 +324,32 @@ class _NetworkInspectorState extends State<NetworkInspector>
           title: _jsonTitle(queryMapString, 'Request Body'),
           children: [
             if (request.body != null && request.body.toString().isNotEmpty)
-              Padding(
+              Container(
                 padding: const EdgeInsets.all(14),
-                child: SelectableText(
-                  request.body,
-                  onTap: (){
-                    _copy(request.body);
-                  },
+                decoration: const BoxDecoration(
+                    border: Border(
+                        bottom: BorderSide(width: .5, color: Colors.green))),
+                child: JsonViewWidget(
+                  jsonString: request.body.toString(),
                 ),
               ),
-            if(queryMap.isNotEmpty)
-
+            if (queryMap.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(14.0),
-                child: JsonViewWidget(jsonString: queryMapString,),
+                child: JsonViewWidget(
+                  jsonString: queryMapString,
+                ),
               )
 
-              // Padding(
-              //   padding: const EdgeInsets.all(14.0),
-              //   child: SelectableText(
-              //     queryMapString,
-              //     onTap: (){
-              //       _copy(queryMapString);
-              //     },
-              //   ),
-              // )
+            // Padding(
+            //   padding: const EdgeInsets.all(14.0),
+            //   child: SelectableText(
+            //     queryMapString,
+            //     onTap: (){
+            //       _copy(queryMapString);
+            //     },
+            //   ),
+            // )
           ],
         ),
         if (response != null)
@@ -350,9 +359,12 @@ class _NetworkInspectorState extends State<NetworkInspector>
               for (var key in (response.headers.keys))
                 DataViewerItem(
                   title: SelectableText(key),
-                  detailText: SelectableText('${response.headers[key]}',onTap: (){
-                    _copy(response.headers[key]);
-                  },),
+                  detailText: SelectableText(
+                    '${response.headers[key]}',
+                    onTap: () {
+                      _copy(response.headers[key]);
+                    },
+                  ),
                 ),
             ],
           ),
@@ -363,48 +375,61 @@ class _NetworkInspectorState extends State<NetworkInspector>
               if (response.body != null)
                 Padding(
                   padding: const EdgeInsets.all(14.0),
-                  child: JsonViewWidget(jsonString: response.body,),
+                  child: JsonViewWidget(
+                    jsonString: response.body,
+                  ),
                 )
-                // Padding(
-                //   padding: const EdgeInsets.all(14),
-                //   child: SelectableText(
-                //     response.body,
-                //     onTap: (){
-                //       _copy(response.body);
-                //     },
-                //   ),
-                // ),
-
+              // Padding(
+              //   padding: const EdgeInsets.all(14),
+              //   child: SelectableText(
+              //     response.body,
+              //     onTap: (){
+              //       _copy(response.body);
+              //     },
+              //   ),
+              // ),
             ],
           ),
       ],
     );
   }
 
-  void _copy(String text){
+  void _copy(String text) {
     Clipboard.setData(ClipboardData(text: text));
     showMessage('复制成功');
   }
 
-  void showMessage(String text){
+  void showMessage(String text) {
     ScaffoldMessenger.of(context).removeCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
-  Widget _jsonTitle(String json,String title,){
+  Widget _jsonTitle(
+    String json,
+    String title,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children:  [
-         Text(title),
+      children: [
+        Text(title),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            IconButton(onPressed: (){
-              _copy(json);
-            }, icon: const Icon(Icons.copy,size: 14,color: Colors.blue,)),
-            IconButton(onPressed: (){
-              pushToJsonView(context, json);
-            }, icon: const Icon(Icons.code_rounded,size: 14,color: Colors.blue))
+            IconButton(
+                onPressed: () {
+                  _copy(json);
+                },
+                icon: const Icon(
+                  Icons.copy,
+                  size: 14,
+                  color: Colors.blue,
+                )),
+            IconButton(
+                onPressed: () {
+                  pushToJsonView(context, json);
+                },
+                icon: const Icon(Icons.code_rounded,
+                    size: 14, color: Colors.blue))
           ],
         )
       ],
@@ -413,14 +438,26 @@ class _NetworkInspectorState extends State<NetworkInspector>
 
   @override
   Widget build(BuildContext context) {
-    return Inspector(
-      child: DataTable(
-        initialColumnWeights: const [3, 1, 1, 1],
-        columns: _buildDataColumns(),
-        rows: _buildDataRows(),
+    return Scaffold(
+      body: Inspector(
+        child: SizedBox(
+          height: double.infinity,
+          child: DataTable(
+            initialColumnWeights: const [3, 1, 1, 1],
+            columns: _buildDataColumns(),
+            rows: _buildDataRows(),
+          ),
+        ),
+        detailView:
+        _selectedRecord == null ? null : _buildSelectedRecordViewer(context),
       ),
-      detailView:
-          _selectedRecord == null ? null : _buildSelectedRecordViewer(context),
+      floatingActionButton: CircleAvatar(
+        backgroundColor: Colors.black12,
+        child: IconButton(onPressed: (){
+          _records.clear();
+          setState(() {});
+        }, icon:const Icon(Icons.delete_sweep_outlined,color: Colors.red,)),
+      )
     );
   }
 }
