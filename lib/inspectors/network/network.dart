@@ -272,10 +272,17 @@ class _NetworkInspectorState extends State<NetworkInspector>
 
     ///从uri中获取参数
 
-    final uriContent = Uri.decodeComponent(request.uri);
-    final uri = Uri.dataFromString(uriContent);
-    final queryMap = uri.queryParameters;
-    final queryMapString = jsonEncode(queryMap);
+    String queryMapString = '';
+    var queryMap = {};
+    try {
+      final uriContent = Uri.decodeComponent(request.uri);
+      final uri = Uri.dataFromString(uriContent);
+      queryMap = uri.queryParameters;
+      queryMapString = jsonEncode(queryMap);
+    } catch (e, s) {
+      print(e);
+      print(s);
+    }
 
     return DataViewer(
       children: [
@@ -298,10 +305,14 @@ class _NetworkInspectorState extends State<NetworkInspector>
             if (response != null)
               DataViewerItem(
                 title: const Text('Status Code'),
-                detailText: SelectableText('${response.statusCode}',style: TextStyle(
-                  color: response.statusCode!=200? Colors.red:Colors.green,
-                  fontWeight: FontWeight.bold
-                ),),
+                detailText: SelectableText(
+                  '${response.statusCode}',
+                  style: TextStyle(
+                      color: response.statusCode != 200
+                          ? Colors.red
+                          : Colors.green,
+                      fontWeight: FontWeight.bold),
+                ),
               ),
           ],
         ),
@@ -439,25 +450,30 @@ class _NetworkInspectorState extends State<NetworkInspector>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Inspector(
-        child: SizedBox(
-          height: double.infinity,
-          child: DataTable(
-            initialColumnWeights: const [3, 1, 1, 1],
-            columns: _buildDataColumns(),
-            rows: _buildDataRows(),
+        body: Inspector(
+          child: SizedBox(
+            height: double.infinity,
+            child: DataTable(
+              initialColumnWeights: const [3, 1, 1, 1],
+              columns: _buildDataColumns(),
+              rows: _buildDataRows(),
+            ),
           ),
+          detailView: _selectedRecord == null
+              ? null
+              : _buildSelectedRecordViewer(context),
         ),
-        detailView:
-        _selectedRecord == null ? null : _buildSelectedRecordViewer(context),
-      ),
-      floatingActionButton: CircleAvatar(
-        backgroundColor: Colors.black12,
-        child: IconButton(onPressed: (){
-          _records.clear();
-          setState(() {});
-        }, icon:const Icon(Icons.delete_sweep_outlined,color: Colors.red,)),
-      )
-    );
+        floatingActionButton: CircleAvatar(
+          backgroundColor: Colors.black12,
+          child: IconButton(
+              onPressed: () {
+                _records.clear();
+                setState(() {});
+              },
+              icon: const Icon(
+                Icons.delete_sweep_outlined,
+                color: Colors.red,
+              )),
+        ));
   }
 }
